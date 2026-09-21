@@ -23,13 +23,17 @@
       </div>
 
       <div class="header-status">
+        <div class="ip-config-bar">
+          <label for="ipInput" class="ip-label">ESP32 IP:</label>
+          <div class="ip-input-group">
+            <input type="text" id="ipInput" class="ip-input" placeholder="172.20.10.2" value="172.20.10.2" autocomplete="off" spellcheck="false" />
+            <button type="button" id="btnConnect" class="btn-connect">Connect</button>
+          </div>
+          <span class="ip-error-text" id="ipErrorMsg" role="alert" hidden>Địa chỉ IP không hợp lệ</span>
+        </div>
         <div class="connection-badge is-connecting" id="connectionBadge">
           <span class="status-dot" id="connectionDot" aria-hidden="true"></span>
-          <span id="connectionText">Đang kết nối...</span>
-        </div>
-        <div class="header-ip" id="headerIpBadge">
-          <span class="ip-label">THIẾT BỊ</span>
-          <strong id="headerIpText">ESP32 · 172.20.10.2</strong>
+          <span id="connectionText">Connecting...</span>
         </div>
         <div class="header-time">
           <span class="time-label">CẬP NHẬT</span>
@@ -209,7 +213,7 @@
 
     <!-- Footer -->
     <footer>
-      <span>HỆ THỐNG ĐÈN GIAO THÔNG THÔNG MINH · ESP32 (172.20.10.2)</span>
+      <span>HỆ THỐNG ĐÈN GIAO THÔNG THÔNG MINH · ESP32</span>
       <span>REST API · GIÁM SÁT THỜI GIAN THỰC</span>
     </footer>
   </div>

@@ -4,11 +4,53 @@
 // ESP32 CONNECTION CONFIGURATION
 // ======================================================
 
-// IP duy nhất của ESP32
-const ESP32_IP = "172.20.10.2";
+const DEFAULT_ESP32_IP = "172.20.10.2";
+const STORAGE_KEY_IP = "smart_traffic_esp32_ip";
+
+function isValidIpv4(ip) {
+  if (typeof ip !== "string") return false;
+  const parts = ip.trim().split(".");
+  if (parts.length !== 4) return false;
+  return parts.every((part) => {
+    if (!/^\d+$/.test(part)) return false;
+    const num = Number(part);
+    return num >= 0 && num <= 255 && String(num) === part;
+  });
+}
+
+function loadSavedIp() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY_IP);
+    if (saved && isValidIpv4(saved.trim())) {
+      return saved.trim();
+    }
+  } catch (e) {
+    console.warn("Cannot access localStorage:", e);
+  }
+  return DEFAULT_ESP32_IP;
+}
+
+function saveIp(ip) {
+  try {
+    localStorage.setItem(STORAGE_KEY_IP, ip);
+  } catch (e) {
+    console.warn("Cannot save to localStorage:", e);
+  }
+}
+
+// IP của ESP32 (lấy từ localStorage hoặc mặc định)
+let ESP32_IP = loadSavedIp();
 
 // REST API trạng thái hệ thống
-const API_URL = `http://${ESP32_IP}/api/status`;
+let API_URL = `http://${ESP32_IP}/api/status`;
+
+function setEsp32Ip(newIp) {
+  ESP32_IP = newIp;
+  API_URL = `http://${ESP32_IP}/api/status`;
+  if (dom.esp32IpLine) {
+    dom.esp32IpLine.textContent = ESP32_IP;
+  }
+}
 
 // false = lấy dữ liệu thật từ ESP32
 // true  = chạy dữ liệu giả lập để test giao diện
@@ -111,6 +153,7 @@ let lastServerUpdateTime = 0;
 
 document.addEventListener("DOMContentLoaded", () => {
   cacheDomElements();
+  initConnectionControls();
   updateConnectionStatus("connecting");
   fetchTrafficData();
 
@@ -126,15 +169,78 @@ window.addEventListener("beforeunload", () => {
 
 
 // ======================================================
+// KHỞI TẠO ĐIỀU KHIỂN KẾT NỐI IP ESP32
+// ======================================================
+
+function initConnectionControls() {
+  if (dom.ipInput) {
+    dom.ipInput.value = ESP32_IP;
+
+    dom.ipInput.addEventListener("input", () => {
+      if (dom.ipErrorMsg) {
+        dom.ipErrorMsg.hidden = true;
+      }
+      dom.ipInput.classList.remove("is-invalid");
+    });
+
+    dom.ipInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        handleConnect();
+      }
+    });
+  }
+
+  if (dom.btnConnect) {
+    dom.btnConnect.addEventListener("click", handleConnect);
+  }
+
+  if (dom.esp32IpLine) {
+    dom.esp32IpLine.textContent = ESP32_IP;
+  }
+}
+
+function handleConnect() {
+  if (!dom.ipInput) return;
+  const inputVal = dom.ipInput.value.trim();
+
+  if (!isValidIpv4(inputVal)) {
+    if (dom.ipErrorMsg) {
+      dom.ipErrorMsg.hidden = false;
+    }
+    dom.ipInput.classList.add("is-invalid");
+    return;
+  }
+
+  if (dom.ipErrorMsg) {
+    dom.ipErrorMsg.hidden = true;
+  }
+  dom.ipInput.classList.remove("is-invalid");
+
+  saveIp(inputVal);
+  setEsp32Ip(inputVal);
+
+  consecutiveFailures = 0;
+  updateConnectionStatus("connecting");
+  fetchTrafficData();
+}
+
+
+// ======================================================
 // CACHE DOM ELEMENTS
 // ======================================================
 
 function cacheDomElements() {
   const ids = [
+    // Điều khiển IP ESP32
+    "ipInput",
+    "btnConnect",
+    "ipErrorMsg",
+
+    // Trạng thái kết nối Header
     "connectionBadge",
     "connectionDot",
     "connectionText",
-    "headerIpText",
     "lastUpdate",
     "connectionAlert",
     "priorityAlert",
@@ -634,17 +740,13 @@ function updateConnectionStatus(status) {
   }
 
   const labels = {
-    connecting: "Đang kết nối...",
-    online: "ESP32 Online",
-    offline: "Mất kết nối"
+    connecting: "Connecting...",
+    online: "Online",
+    offline: "Offline"
   };
 
   if (dom.connectionText) {
     dom.connectionText.textContent = labels[status] || status;
-  }
-
-  if (dom.headerIpText) {
-    dom.headerIpText.textContent = `ESP32 · ${ESP32_IP}`;
   }
 
   if (dom.connectionAlert) {
