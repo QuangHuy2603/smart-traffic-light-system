@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Bảng điều khiển giám sát thời gian thực hệ thống Đèn giao thông thông minh ESP32.">
+  <meta name="theme-color" content="#0b0f14">
+  <title>Hệ thống Đèn Giao Thông Thông Minh</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Header -->
+    <header class="topbar">
+      <div class="brand-block">
+        <div class="traffic-mini-icon" aria-hidden="true">
+          <span></span><span></span><span></span>
+        </div>
+        <div>
+          <p class="eyebrow">ĐỒ ÁN HỆ THỐNG NHÚNG · ESP32</p>
+          <h1>HỆ THỐNG ĐÈN GIAO THÔNG THÔNG MINH</h1>
+        </div>
+      </div>
+
+      <div class="header-status">
+        <div class="connection-badge is-connecting" id="connectionBadge">
+          <span class="status-dot" id="connectionDot" aria-hidden="true"></span>
+          <span id="connectionText">Đang kết nối...</span>
+        </div>
+        <div class="header-ip" id="headerIpBadge">
+          <span class="ip-label">THIẾT BỊ</span>
+          <strong id="headerIpText">ESP32 · 172.20.10.2</strong>
+        </div>
+        <div class="header-time">
+          <span class="time-label">CẬP NHẬT</span>
+          <strong id="lastUpdate">--:--:--</strong>
+        </div>
+      </div>
+    </header>
+
+    <!-- Cảnh báo mất kết nối -->
+    <div class="connection-alert" id="connectionAlert" role="status" hidden>
+      <span class="alert-icon" aria-hidden="true">!</span>
+      <div>
+        <strong>Mất kết nối với ESP32</strong>
+        <span>Đang tự động thử kết nối lại...</span>
+      </div>
+    </div>
+
+    <!-- Cảnh báo ưu tiên khẩn cấp -->
+    <div class="priority-alert" id="priorityAlert" role="status" hidden>
+      <div>
+        <strong>ƯU TIÊN KHẨN CẤP ĐANG KÍCH HOẠT</strong>
+        <p>Hướng ưu tiên: <span id="priorityBannerDirection">--</span></p>
+      </div>
+    </div>
+
+    <main>
+      <!-- Bố cục 2 cột chính: Hướng Bắc - Nam & Hướng Đông - Tây -->
+      <div class="traffic-columns">
+        <!-- Cột Hướng Bắc – Nam -->
+        <section class="direction-card" id="nsCard">
+          <div class="direction-header">
+            <span class="direction-tag">HƯỚNG 01</span>
+            <h2>Hướng Bắc – Nam</h2>
+          </div>
+
+          <!-- Cụm đèn giao thông -->
+          <div class="traffic-light-box">
+            <div class="traffic-light-housing" aria-label="Cụm đèn Bắc – Nam">
+              <span class="light red" id="nsRed" title="Đèn đỏ"></span>
+              <span class="light yellow" id="nsYellow" title="Đèn vàng"></span>
+              <span class="light green" id="nsGreen" title="Đèn xanh"></span>
+            </div>
+            <div class="light-status-text" id="nsLightValue">--</div>
+          </div>
+
+          <!-- Countdown nổi bật nhất -->
+          <div class="countdown-hero">
+            <div class="countdown-number" id="nsCountdown">--</div>
+            <div class="countdown-unit">giây</div>
+          </div>
+
+          <!-- Cảm biến & Mật độ -->
+          <div class="direction-details">
+            <div class="detail-row">
+              <span class="detail-label">Cảm biến IR_NS1</span>
+              <span class="sensor-badge" id="irNS1Status">--</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Cảm biến IR_NS2</span>
+              <span class="sensor-badge" id="irNS2Status">--</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Phát hiện xe</span>
+              <span class="sensor-count-badge" id="nsSensorCount">0/2 cảm biến</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Mật độ phương tiện</span>
+              <span class="density-badge" id="nsAxisDensity">--</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Cột Hướng Đông – Tây -->
+        <section class="direction-card" id="ewCard">
+          <div class="direction-header">
+            <span class="direction-tag">HƯỚNG 02</span>
+            <h2>Hướng Đông – Tây</h2>
+          </div>
+
+          <!-- Cụm đèn giao thông -->
+          <div class="traffic-light-box">
+            <div class="traffic-light-housing" aria-label="Cụm đèn Đông – Tây">
+              <span class="light red" id="ewRed" title="Đèn đỏ"></span>
+              <span class="light yellow" id="ewYellow" title="Đèn vàng"></span>
+              <span class="light green" id="ewGreen" title="Đèn xanh"></span>
+            </div>
+            <div class="light-status-text" id="ewLightValue">--</div>
+          </div>
+
+          <!-- Countdown nổi bật nhất -->
+          <div class="countdown-hero">
+            <div class="countdown-number" id="ewCountdown">--</div>
+            <div class="countdown-unit">giây</div>
+          </div>
+
+          <!-- Cảm biến & Mật độ -->
+          <div class="direction-details">
+            <div class="detail-row">
+              <span class="detail-label">Cảm biến IR_EW1</span>
+              <span class="sensor-badge" id="irEW1Status">--</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Cảm biến IR_EW2</span>
+              <span class="sensor-badge" id="irEW2Status">--</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Phát hiện xe</span>
+              <span class="sensor-count-badge" id="ewSensorCount">0/2 cảm biến</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Mật độ phương tiện</span>
+              <span class="density-badge" id="ewAxisDensity">--</span>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Trạng thái hệ thống (Bên dưới 2 hướng) -->
+      <section class="system-section">
+        <h3 class="section-title">Trạng thái hệ thống</h3>
+        <div class="system-grid">
+          <div class="system-item">
+            <span class="system-label">Chế độ</span>
+            <strong class="system-value" id="summaryMode">Bình thường</strong>
+          </div>
+          <div class="system-item fsm-item">
+            <span class="system-label">FSM hiện tại</span>
+            <div class="fsm-content">
+              <strong class="fsm-code" id="stateTitle">--</strong>
+              <span class="fsm-desc" id="stateDescription">Đang chờ dữ liệu từ ESP32...</span>
+            </div>
+          </div>
+          <div class="system-item">
+            <span class="system-label">Người đi bộ</span>
+            <strong class="system-value" id="pedestrianStatusLine">Không có yêu cầu</strong>
+          </div>
+          <div class="system-item">
+            <span class="system-label">Ưu tiên khẩn cấp</span>
+            <strong class="system-value" id="priorityStatusLine">Không hoạt động</strong>
+          </div>
+          <div class="system-item">
+            <span class="system-label">Thời gian hoạt động</span>
+            <strong class="system-value" id="uptimeStatusLine">--:--:--</strong>
+          </div>
+          <div class="system-item">
+            <span class="system-label">IP ESP32</span>
+            <strong class="system-value ip-mono" id="esp32IpLine">172.20.10.2</strong>
+          </div>
+        </div>
+      </section>
+
+      <!-- Nhật ký sự kiện (Thu gọn 5 sự kiện gần nhất) -->
+      <section class="events-section">
+        <div class="events-header">
+          <h3 class="section-title">Nhật ký sự kiện (5 sự kiện gần nhất)</h3>
+        </div>
+        <div class="events-table-wrap">
+          <table class="events-table">
+            <thead>
+              <tr>
+                <th>THỜI GIAN</th>
+                <th>LOẠI</th>
+                <th>SỰ KIỆN</th>
+              </tr>
+            </thead>
+            <tbody id="eventLogBody">
+              <tr id="emptyEventRow">
+                <td>--:--:--</td>
+                <td>HỆ THỐNG</td>
+                <td>Đang chờ dữ liệu từ ESP32...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+      <span>HỆ THỐNG ĐÈN GIAO THÔNG THÔNG MINH · ESP32 (172.20.10.2)</span>
+      <span>REST API · GIÁM SÁT THỜI GIAN THỰC</span>
+    </footer>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
